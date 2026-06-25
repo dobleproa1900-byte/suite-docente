@@ -18,7 +18,7 @@ if "autenticado" not in st.session_state:
 # Inicializar cliente Groq con la API Key directa
 try:
     # ⬇️ COLOCÁ TU CLAVE REAL DE GROQ ENTRE LAS COMILLAS ABAJO ⬇️
-    client = Groq(api_key="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")
+    client = Groq(api_key=st.secrets"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")
 except Exception:
     client = None
 
