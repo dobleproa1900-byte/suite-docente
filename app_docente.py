@@ -15,9 +15,17 @@ st.set_page_config(
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
-# Inicializar cliente Groq con la API Key desde Secrets de Streamlit
+# Inicializar cliente Groq con máxima compatibilidad de Secrets
 try:
-    client = Groq(api_key=st.secrets["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"])
+    if "GROQ_API_KEY" in st.secrets:
+        api_key = st.secrets["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"]
+    elif "groq_api_key" in st.secrets:
+        api_key = st.secrets["groq_api_key"]
+    else:
+        # Intenta leer si se pegó la clave directo en el cuadro sin el nombre antes
+        api_key = list(st.secrets.values())[0] if st.secrets else None
+
+    client = Groq(api_key=api_key) if api_key else None
 except Exception:
     client = None
 
