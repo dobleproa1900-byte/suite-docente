@@ -15,19 +15,16 @@ st.set_page_config(
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
-# Inicializar cliente Groq con máxima compatibilidad de Secrets
+# Inicializar cliente Groq de forma simple y directa
 try:
-    if "GROQ_API_KEY" in st.secrets:
-        api_key = st.secrets["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"]
-    elif "groq_api_key" in st.secrets:
-        api_key = st.secrets["groq_api_key"]
-    else:
-        # Intenta leer si se pegó la clave directo en el cuadro sin el nombre antes
-        api_key = list(st.secrets.values())[0] if st.secrets else None
-
+    api_key = st.secrets.get("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 ")
     client = Groq(api_key=api_key) if api_key else None
 except Exception:
     client = None
+
+# LÍNEA DE DIAGNÓSTICO - TEMPORAL
+# Esto va a mostrar en pantalla si la app encuentra la clave o no
+st.write("Diagnóstico de Clave:", st.secrets.get("GROQ_API_KEY", "NO ENCONTRADA"))
 
 # ==========================================
 # PANTALLA DE LOGIN SIMULADO (DEMO)
