@@ -209,4 +209,128 @@ else:
                                 response_format={"type": "json_object"}
                             )
                             
-                            res_acta = json.loads(completion_act
+                            res_acta = json.loads(completion_acta.choices[0].message.content)
+                            st.text_input("👦 Alumno:", value=res_acta.get("alumno", ""))
+                            st.text_input("👤 Adulto Responsable:", value=res_acta.get("adulto", ""))
+                            st.text_input("🏷️ Categoría:", value=res_acta.get("categoria", ""))
+                            st.text_area("🤝 Compromiso Asumido:", value=res_acta.get("compromiso", ""), height=70)
+                            st.markdown("---")
+                            st.markdown("### 📝 Nota Formal sugerida:")
+                            nota = res_acta.get("nota_formal", "")
+                            st.info(nota)
+                            
+                            # BOTÓN DE DESCARGA DEL ACTA FORMAL
+                            st.download_button(
+                                label="📥 Descargar Nota Formal (.txt)",
+                                data=f"ACTA INSTITUCIONAL\nAlumno: {res_acta.get('alumno','')}\nResponsable: {res_acta.get('adulto','')}\n\n{nota}",
+                                file_name=f"Acta_{res_acta.get('alumno','').replace(' ', '_')}.txt",
+                                mime="text/plain"
+                            )
+                        except Exception as e:
+                            st.error(f"Error: {str(e)}")
+            else:
+                st.info("Esperando datos para procesar...")
+
+    # ==========================================
+    # PESTAÑA 3: REGISTRO DE RÚBRICAS
+    # ==========================================
+    with tab3:
+        st.subheader("📊 Tracker de Progreso y Generación de Rúbricas")
+        st.write("Ingresá el contenido o capacidad que querés evaluar para diseñar los descriptores de desempeño multinivel.")
+        
+        col_rub_in, col_rub_out = st.columns([1, 1])
+        
+        with col_rub_in:
+            criterio_eval = st.text_input("Criterio / Capacidad a evaluar:", placeholder="Ej: Uso de mayúsculas y puntos...")
+            generar_rubrica = st.button("Diseñar Matriz de Rúbricas", type="primary")
+            
+        with col_rub_out:
+            st.markdown("#### 📋 Matriz de Desempeño Generada")
+            
+            if generar_rubrica:
+                if not criterio_eval:
+                    st.warning("⚠️ Por favor, ingresá un criterio para evaluar.")
+                elif client is None:
+                    st.error("❌ Cliente de Groq no inicializado.")
+                else:
+                    with st.spinner("Llama 3.3 70B construyendo la matriz pedagógica..."):
+                        try:
+                            prompt_sistema_rubrica = (
+                                "Sos un especialista en evaluación educativa. Devolvé un objeto JSON con las claves "
+                                "\"en_proceso\", \"satisfactorio_basico\", \"alcanzado\" y \"avanzado\" con descriptores detallados."
+                            )
+                            completion_rubrica = client.chat.completions.create(
+                                messages=[
+                                    {"role": "system", "content": prompt_sistema_rubrica},
+                                    {"role": "user", "content": criterio_eval}
+                                ],
+                                model=modelo_complejo,
+                                temperature=0.3,
+                                response_format={"type": "json_object"}
+                            )
+                            res_rub = json.loads(completion_rubrica.choices[0].message.content)
+                            st.error(f"🔴 **En Proceso / Inicial:**\n\n{res_rub.get('en_proceso', '')}")
+                            st.warning(f"🟡 **Básico / En Camino:**\n\n{res_rub.get('satisfactorio_basico', '')}")
+                            st.success(f"🟢 **Alcanzado / Esperado:**\n\n{res_rub.get('alcanzado', '')}")
+                            st.info(f"🔵 **Avanzado / Destacado:**\n\n{res_rub.get('avanzado', '')}")
+                        except Exception as e:
+                            st.error(f"Error: {str(e)}")
+            else:
+                st.info("Esperando definición de criterio...")
+
+    # ==========================================
+    # PESTAÑA 4: AGENDA DE ALERTAS TEMPRANAS
+    # ==========================================
+    with tab4:
+        st.subheader("📅 Panel de Alertas Tempranas y Seguimiento de Alumnos")
+        st.write("Evaluá situaciones críticas de vulnerabilidad educativa o necesidades de inclusión pedagógica (PPI).")
+        
+        col_al_in, col_al_out = st.columns([1, 1])
+        
+        with col_al_in:
+            observacion_alumno = st.text_area("Observaciones del comportamiento o trayectoria del estudiante:", placeholder="Ej: Faltó 12 días seguidos...", height=150)
+            evaluar_alerta = st.button("Evaluar Alerta Temprana", type="primary")
+            
+        with col_al_out:
+            st.markdown("#### 🚨 Diagnóstico de Trayectoria")
+            
+            if evaluar_alerta:
+                if not observacion_alumno:
+                    st.warning("⚠️ Por favor, ingresá la observación del alumno.")
+                elif client is None:
+                    st.error("❌ Cliente de Groq no inicializado.")
+                else:
+                    with st.spinner("Llama 3.1 8B analizando indicadores de riesgo escolar..."):
+                        try:
+                            prompt_sistema_alerta = (
+                                "Sos un orientador de la Provincia de Buenos Aires. Analizá y devolvé un JSON estricto "
+                                "con las claves: nivel_riesgo, requiere_ppi, analisis_situacion, pasos_a_seguir."
+                            )
+                            completion_alerta = client.chat.completions.create(
+                                messages=[
+                                    {"role": "system", "content": prompt_sistema_alerta},
+                                    {"role": "user", "content": observacion_alumno}
+                                ],
+                                model=modelo_rapido,
+                                temperature=0.1,
+                                response_format={"type": "json_object"}
+                            )
+                            res_alerta = json.loads(completion_alerta.choices[0].message.content)
+                            
+                            riesgo = res_alerta.get("nivel_riesgo", "Bajo")
+                            if riesgo == "Alto":
+                                st.error(f"🚨 **Nivel de Riesgo Escolar:** {riesgo}")
+                            elif riesgo == "Medio":
+                                st.warning(f"⚠️ **Nivel de Riesgo Escolar:** {riesgo}")
+                            else:
+                                st.success(f"🟢 **Nivel de Riesgo Escolar:** {riesgo}")
+                                
+                            st.text_input("📋 Requiere Configuración PPI / Inclusión:", value=res_alerta.get("requiere_ppi", ""))
+                            st.text_area("🧠 Análisis del Factor de Riesgo:", value=res_alerta.get("analisis_situacion", ""), height=80)
+                            st.markdown("---")
+                            st.markdown("### 📋 Protocolo de Acción Institucional:")
+                            st.write(res_alerta.get("pasos_a_seguir", ""))
+                        except Exception as e:
+                            st.error(f"Error: {str(e)}")
+            else:
+                st.info("Esperando carga de observaciones...")
