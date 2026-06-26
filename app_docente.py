@@ -24,7 +24,7 @@ except Exception:
 
 # LÍNEA DE DIAGNÓSTICO - TEMPORAL
 # Esto va a mostrar en pantalla si la app encuentra la clave o no
-st.write("Diagnóstico de Clave:", st.secrets.get("GROQ_API_KEY", "NO ENCONTRADA"))
+
 
 # ==========================================
 # PANTALLA DE LOGIN SIMULADO (DEMO)
@@ -60,7 +60,7 @@ else:
         st.title("⚙️ Panel del Docente")
         
         st.markdown("### 👤 Usuario Activo")
-        st.info("📍 Docente: Gerardo Sobrino\n🏫 Escuela: Escuela Primaria San Pedro\n🟢 Grado: 4° Grado - Turno Mañana")
+        st.info("📍 Docente: juan Solyot\n🏫 Escuela: Escuela Primaria San Pedro\n🟢 Grado: x - Turno Mañana")
         
         st.markdown("---")
         st.markdown("### 🧠 Configuración de IA")
