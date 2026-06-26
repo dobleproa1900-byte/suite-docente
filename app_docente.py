@@ -17,7 +17,7 @@ if "autenticado" not in st.session_state:
 
 # Inicializar cliente Groq de forma simple y directa
 try:
-    api_key = st.secrets.get("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 ")
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     client = Groq(api_key=api_key) if api_key else None
 except Exception:
     client = None
