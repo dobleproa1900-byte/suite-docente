@@ -12,6 +12,91 @@ st.set_page_config(
     layout="wide"
 )
 
+# ==========================================
+# ESTILOS PERSONALIZADOS
+# ==========================================
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #3730a3;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+}
+
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+
+.stApp { background: linear-gradient(180deg, #f4f6fb 0%, #eef1f8 100%); }
+
+.app-header {
+    background: linear-gradient(120deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 1.75rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 10px 30px -12px rgba(79, 70, 229, 0.45);
+}
+.app-header h1 { color: #ffffff !important; font-weight: 800; font-size: 1.9rem; margin: 0; }
+.app-header p { color: rgba(255,255,255,0.85) !important; font-size: 1rem; margin: 0.25rem 0 0 0; }
+
+.kpi-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 1.1rem 1.3rem;
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--kpi-color, var(--primary));
+    box-shadow: 0 4px 14px -8px rgba(30,41,59,0.15);
+}
+.kpi-card .kpi-label { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-card .kpi-value { color: var(--text-main); font-size: 2rem; font-weight: 800; line-height: 1.2; }
+
+.stTabs [data-baseweb="tab-list"] { gap: 4px; background: #ffffff; padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+.stTabs [data-baseweb="tab"] { border-radius: 8px; padding: 10px 18px; font-weight: 600; color: var(--text-muted); }
+.stTabs [aria-selected="true"] { background: var(--primary) !important; color: #ffffff !important; }
+
+.stButton > button, .stDownloadButton > button {
+    border-radius: 10px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    transition: all 0.15s ease;
+}
+.stButton > button[kind^="primary"], .stFormSubmitButton > button[kind^="primary"] {
+    background: linear-gradient(120deg, var(--primary), var(--primary-dark)) !important;
+    border: none;
+}
+.stButton > button:hover, .stDownloadButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -8px rgba(79,70,229,0.5);
+}
+
+[data-testid="stForm"] {
+    background: var(--card-bg);
+    padding: 1.75rem 2rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 45px -20px rgba(30, 41, 59, 0.25);
+}
+
+[data-testid="stDataFrame"], [data-testid="stCodeBlock"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+[data-testid="stAlert"] { border-radius: 12px; }
+
+h2, h3 { color: var(--text-main); font-weight: 700; }
+hr { border-color: var(--border) !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # 🔒 SEGURIDAD: URLs ocultas usando Streamlit Secrets
 GAS_WEBAPP_URL = st.secrets.get("GAS_WEBAPP_URL", "")
 SHEETS_CSV_URL = st.secrets.get("SHEETS_CSV_URL", "")
@@ -28,15 +113,22 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align:center'>🏛️ ConcejalIA</h1>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='text-align:center;color:gray'>Gestión Legislativa Inteligente — {DISTRITO}</h4>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style='text-align:center; margin-bottom: 1.5rem;'>
+                <div style='font-size:3rem; line-height:1;'>🏛️</div>
+                <h1 style='color:#3730a3; font-weight:800; margin:0.3rem 0 0 0;'>ConcejalIA</h1>
+                <p style='color:#64748b; font-size:1rem; margin-top:0.3rem;'>Gestión Legislativa Inteligente — {DISTRITO}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         with st.form("login_form"):
             usuario = st.text_input("Usuario:", placeholder="concejal")
             clave = st.text_input("Contraseña:", type="password", placeholder="••••••••")
             st.caption("ℹ️ Demo: usuario `concejal` / contraseña `sanpedro2026`")
-            if st.form_submit_button("Ingresar al Sistema", type="primary"):
+            if st.form_submit_button("Ingresar al Sistema", type="primary", use_container_width=True):
                 if usuario == DEMO_USER and clave == DEMO_PASS:
                     st.session_state.autenticado = True
                     st.rerun()
@@ -81,9 +173,9 @@ def cargar_datos():
 def colorear_estado(val):
     val_lower = str(val).lower()
     if val_lower == 'pendiente':
-        return 'color: #ff4b4b; font-weight: bold;'
+        return 'color: #ef4444; font-weight: bold;'
     elif val_lower == 'solucionado':
-        return 'color: #09ab3b; font-weight: bold;'
+        return 'color: #10b981; font-weight: bold;'
     elif val_lower == 'en gestión':
         return 'color: #f59e0b; font-weight: bold;'
     return ''
@@ -93,15 +185,20 @@ def colorear_estado(val):
 # ==========================================
 col_titulo, col_logout = st.columns([5, 1])
 with col_titulo:
-    st.title(f"🏛️ Sistema de Gestión Territorial y Asistencia Legislativa")
-    st.markdown(f"### *Herramienta de Inteligencia Local para Concejales — {DISTRITO}*")
+    st.markdown(
+        f"""
+        <div class="app-header">
+            <h1>🏛️ Sistema de Gestión Territorial y Asistencia Legislativa</h1>
+            <p>Herramienta de Inteligencia Local para Concejales — {DISTRITO}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 with col_logout:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚪 Cerrar sesión"):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("🚪 Cerrar sesión", use_container_width=True):
         st.session_state.autenticado = False
         st.rerun()
-
-st.markdown("---")
 
 # Carga de datos
 df_reclamos, es_demo = cargar_datos()
@@ -128,15 +225,38 @@ with tab1:
     en_gestion = len(df_reclamos[df_reclamos[estado_col].str.lower() == "en gestión"])
     solucionados = len(df_reclamos[df_reclamos[estado_col].str.lower() == "solucionado"])
 
+    def kpi_card(col, label, value, color):
+        col.markdown(
+            f"""
+            <div class="kpi-card" style="--kpi-color:{color};">
+                <div class="kpi-label">{label}</div>
+                <div class="kpi-value">{value}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-    kpi1.metric("🚨 Total Reclamos", total_reclamos)
-    kpi2.metric("⏳ Pendientes", pendientes, delta=f"{pendientes} urgentes", delta_color="inverse")
-    kpi3.metric("🔄 En Gestión", en_gestion)
-    kpi4.metric("✅ Solucionados", solucionados)
+    kpi_card(kpi1, "🚨 Total Reclamos", total_reclamos, "#4f46e5")
+    kpi_card(kpi2, "⏳ Pendientes", pendientes, "#ef4444")
+    kpi_card(kpi3, "🔄 En Gestión", en_gestion, "#f59e0b")
+    kpi_card(kpi4, "✅ Solucionados", solucionados, "#10b981")
 
     st.markdown("---")
 
     g1, g2 = st.columns(2)
+
+    PALETA_CATEGORICA = ["#4f46e5", "#06b6d4", "#f59e0b", "#ef4444", "#10b981", "#818cf8"]
+
+    def estilizar_layout(fig):
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=30, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#1e293b"),
+            legend=dict(bgcolor="rgba(0,0,0,0)")
+        )
+        return fig
 
     with g1:
         st.subheader("📍 Reclamos por Barrio / Localidad")
@@ -144,8 +264,9 @@ with tab1:
             barrio_counts = df_reclamos["Barrio"].value_counts().reset_index()
             barrio_counts.columns = ["Barrio", "Cantidad"]
             fig_bar = px.bar(barrio_counts, x="Barrio", y="Cantidad",
-                             color="Cantidad", color_continuous_scale="Blues", text_auto=True)
-            fig_bar.update_layout(margin=dict(l=0, r=0, t=30, b=0), xaxis_title="", yaxis_title="Cant. de Reclamos")
+                             color="Cantidad",
+                             color_continuous_scale=["#c7d2fe", "#4f46e5"], text_auto=True)
+            estilizar_layout(fig_bar).update_layout(xaxis_title="", yaxis_title="Cant. de Reclamos")
             st.plotly_chart(fig_bar, use_container_width=True)
 
     with g2:
@@ -153,8 +274,9 @@ with tab1:
         if "Tipo" in df_reclamos.columns:
             tipo_counts = df_reclamos["Tipo"].value_counts().reset_index()
             tipo_counts.columns = ["Tipo", "Cantidad"]
-            fig_pie = px.pie(tipo_counts, names="Tipo", values="Cantidad", hole=0.4)
-            fig_pie.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+            fig_pie = px.pie(tipo_counts, names="Tipo", values="Cantidad", hole=0.4,
+                             color_discrete_sequence=PALETA_CATEGORICA)
+            estilizar_layout(fig_pie)
             st.plotly_chart(fig_pie, use_container_width=True)
 
     # Gráfico de evolución temporal
@@ -164,7 +286,8 @@ with tab1:
             df_reclamos["Fecha"] = pd.to_datetime(df_reclamos["Fecha"])
             evolucion = df_reclamos.groupby("Fecha").size().reset_index(name="Cantidad")
             fig_line = px.line(evolucion, x="Fecha", y="Cantidad", markers=True)
-            fig_line.update_layout(margin=dict(l=0, r=0, t=30, b=0))
+            fig_line.update_traces(line_color="#4f46e5", marker=dict(color="#06b6d4", size=8))
+            estilizar_layout(fig_line)
             st.plotly_chart(fig_line, use_container_width=True)
         except Exception:
             pass
