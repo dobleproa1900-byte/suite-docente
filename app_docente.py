@@ -1,5 +1,5 @@
 import streamlit as st
-from groq import Groq
+import anthropic
 import json
 
 st.set_page_config(
@@ -100,9 +100,23 @@ if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
 try:
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 except Exception:
     client = None
+
+
+MODELO_IA = "claude-sonnet-4-6"
+
+
+def extraer_json(respuesta):
+    """Extrae el objeto JSON del texto de la respuesta de Claude.
+    Tolera que el modelo envuelva el JSON en texto o fences de markdown."""
+    texto = next(b.text for b in respuesta.content if b.type == "text")
+    inicio = texto.find("{")
+    fin = texto.rfind("}")
+    if inicio == -1 or fin == -1:
+        raise ValueError("La respuesta no contiene un objeto JSON.")
+    return json.loads(texto[inicio:fin + 1])
 
 if not st.session_state.autenticado:
     col_l1, col_l2, col_l3 = st.columns([1, 1.5, 1])
@@ -136,10 +150,7 @@ else:
         st.info("📍 Docente: Gerardo Sobrino\n🏫 Escuela: Escuela Primaria San Pedro\n🟢 Grado: 4° Grado - Turno Mañana")
         st.markdown("---")
         st.markdown("### 🧠 Configuración de IA")
-        modelo_complejo = "llama-3.3-70b-versatile"
-        modelo_rapido = "llama-3.1-8b-instant"
-        st.text_input("Motor de Planificación/Rúbricas:", value=modelo_complejo, disabled=True)
-        st.text_input("Motor de Actas/Alertas:", value=modelo_rapido, disabled=True)
+        st.text_input("Motor de IA:", value=MODELO_IA, disabled=True)
         st.markdown("---")
         if st.button("🚪 Cerrar Sesión Demo", use_container_width=True):
             st.session_state.autenticado = False
@@ -181,9 +192,9 @@ else:
                 if not eje_tematico or not texto_soporte:
                     st.warning("⚠️ Por favor, completa el eje temático y el texto soporte.")
                 elif client is None:
-                    st.error("❌ Cliente de Groq no inicializado. Verifica las claves en Streamlit Cloud Secrets.")
+                    st.error("❌ Cliente de Anthropic no inicializado. Verifica las claves en Streamlit Cloud Secrets.")
                 else:
-                    with st.spinner("Llama 3.3 70B analizando el Diseño Curricular..."):
+                    with st.spinner("Claude analizando el Diseño Curricular..."):
                         try:
                             prompt_sistema = (
                                 "Sos un asesor técnico-pedagógico experto de la Provincia de Buenos Aires, especializado en aulas heterogéneas de nivel primario. "
@@ -197,16 +208,16 @@ else:
                                 "}\n\n"
                                 "Cada nivel debe tener al menos 3 actividades concretas y diferenciadas entre sí. Usá lenguaje claro y didáctico."
                             )
-                            completion = client.chat.completions.create(
+                            respuesta = client.messages.create(
+                                model=MODELO_IA,
+                                max_tokens=8192,
+                                temperature=0.3,
+                                system=prompt_sistema,
                                 messages=[
-                                    {"role": "system", "content": prompt_sistema},
                                     {"role": "user", "content": f"Área Curricular: {area}\nEje Temático: {eje_tematico}\nTexto base:\n{texto_soporte}"}
                                 ],
-                                model=modelo_complejo,
-                                temperature=0.3,
-                                response_format={"type": "json_object"}
                             )
-                            respuesta_json = json.loads(completion.choices[0].message.content)
+                            respuesta_json = extraer_json(respuesta)
                             plan_txt = respuesta_json.get("planificacion", "")
                             ini_txt = respuesta_json.get("nivel_inicial", "")
                             med_txt = respuesta_json.get("nivel_medio", "")
@@ -249,24 +260,24 @@ else:
                 if not texto_crudo:
                     st.warning("⚠️ Por favor, ingresá algún texto.")
                 elif client is None:
-                    st.error("❌ Cliente de Groq no inicializado.")
+                    st.error("❌ Cliente de Anthropic no inicializado.")
                 else:
-                    with st.spinner("Llama 3.1 8B formalizando el texto..."):
+                    with st.spinner("Claude formalizando el texto..."):
                         try:
                             prompt_sistema_acta = (
                                 "Sos un asistente administrativo escolar experto. Procesá el texto informal "
                                 "y devolvé un objeto JSON con claves: alumno, adulto, categoria, compromiso, nota_formal."
                             )
-                            completion_acta = client.chat.completions.create(
+                            respuesta_acta = client.messages.create(
+                                model=MODELO_IA,
+                                max_tokens=4096,
+                                temperature=0.1,
+                                system=prompt_sistema_acta,
                                 messages=[
-                                    {"role": "system", "content": prompt_sistema_acta},
                                     {"role": "user", "content": texto_crudo}
                                 ],
-                                model=modelo_rapido,
-                                temperature=0.1,
-                                response_format={"type": "json_object"}
                             )
-                            res_acta = json.loads(completion_acta.choices[0].message.content)
+                            res_acta = extraer_json(respuesta_acta)
                             st.text_input("👦 Alumno:", value=res_acta.get("alumno", ""))
                             st.text_input("👤 Adulto Responsable:", value=res_acta.get("adulto", ""))
                             st.text_input("🏷️ Categoría:", value=res_acta.get("categoria", ""))
@@ -299,24 +310,24 @@ else:
                 if not criterio_eval:
                     st.warning("⚠️ Por favor, ingresá un criterio para evaluar.")
                 elif client is None:
-                    st.error("❌ Cliente de Groq no inicializado.")
+                    st.error("❌ Cliente de Anthropic no inicializado.")
                 else:
-                    with st.spinner("Llama 3.3 70B construyendo la matriz pedagógica..."):
+                    with st.spinner("Claude construyendo la matriz pedagógica..."):
                         try:
                             prompt_sistema_rubrica = (
                                 "Sos un especialista en evaluación educativa. Devolvé un objeto JSON con las claves "
                                 "\"en_proceso\", \"satisfactorio_basico\", \"alcanzado\" y \"avanzado\" con descriptores detallados."
                             )
-                            completion_rubrica = client.chat.completions.create(
+                            respuesta_rubrica = client.messages.create(
+                                model=MODELO_IA,
+                                max_tokens=4096,
+                                temperature=0.3,
+                                system=prompt_sistema_rubrica,
                                 messages=[
-                                    {"role": "system", "content": prompt_sistema_rubrica},
                                     {"role": "user", "content": criterio_eval}
                                 ],
-                                model=modelo_complejo,
-                                temperature=0.3,
-                                response_format={"type": "json_object"}
                             )
-                            res_rub = json.loads(completion_rubrica.choices[0].message.content)
+                            res_rub = extraer_json(respuesta_rubrica)
                             st.error(f"🔴 **En Proceso / Inicial:**\n\n{res_rub.get('en_proceso', '')}")
                             st.warning(f"🟡 **Básico / En Camino:**\n\n{res_rub.get('satisfactorio_basico', '')}")
                             st.success(f"🟢 **Alcanzado / Esperado:**\n\n{res_rub.get('alcanzado', '')}")
@@ -339,24 +350,24 @@ else:
                 if not observacion_alumno:
                     st.warning("⚠️ Por favor, ingresá la observación del alumno.")
                 elif client is None:
-                    st.error("❌ Cliente de Groq no inicializado.")
+                    st.error("❌ Cliente de Anthropic no inicializado.")
                 else:
-                    with st.spinner("Llama 3.1 8B analizando indicadores de riesgo escolar..."):
+                    with st.spinner("Claude analizando indicadores de riesgo escolar..."):
                         try:
                             prompt_sistema_alerta = (
                                 "Sos un orientador de la Provincia de Buenos Aires. Analizá y devolvé un JSON estricto "
                                 "con las claves: nivel_riesgo, requiere_ppi, analisis_situacion, pasos_a_seguir."
                             )
-                            completion_alerta = client.chat.completions.create(
+                            respuesta_alerta = client.messages.create(
+                                model=MODELO_IA,
+                                max_tokens=4096,
+                                temperature=0.1,
+                                system=prompt_sistema_alerta,
                                 messages=[
-                                    {"role": "system", "content": prompt_sistema_alerta},
                                     {"role": "user", "content": observacion_alumno}
                                 ],
-                                model=modelo_rapido,
-                                temperature=0.1,
-                                response_format={"type": "json_object"}
                             )
-                            res_alerta = json.loads(completion_alerta.choices[0].message.content)
+                            res_alerta = extraer_json(respuesta_alerta)
                             riesgo = res_alerta.get("nivel_riesgo", "Bajo")
                             if riesgo == "Alto":
                                 st.error(f"🚨 **Nivel de Riesgo Escolar:** {riesgo}")
